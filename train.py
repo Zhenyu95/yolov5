@@ -10,7 +10,7 @@ import os
 import random
 import sys
 import time
-import wandb
+# import wandb
 from copy import deepcopy
 from pathlib import Path
 
@@ -593,5 +593,9 @@ def run(**kwargs):
 
 
 if __name__ == "__main__":
+    print('-'*20, 'starting parsing', '-'*20)
     opt = parse_opt()
+    print('-'*20, 'finished parsing', '-'*20)
+    print('-'*20, 'starting main', '-'*20)
     main(opt)
+    print('-'*20, 'finished main', '-'*20)
