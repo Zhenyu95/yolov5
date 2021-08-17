@@ -15,4 +15,13 @@ os.system('pip3 install -r yolov5/requirements.txt')
 
 # 
 # simcloud job post --cpus 8 --gpus 2 --memory 128 --timeout 5m --attributes gpu_brand:Tesla --smi current-ubuntu18.04-cuda11.0 --bundle bundle-70b32fe01f4841faa11f1802ca7af3d5 --command "python3 /Users/zhenyu/Documents/Scripts/IphoneAOI/yolov5/test_run.py" --output yolov5/models/yolov5s.yaml
-# simcloud -c mr2 job post --cpus 16 --gpus 4 --memory 128 --attributes gpu_brand:Tesla --smi current-ubuntu18.04-cuda11.0 --bundle bundle-33025af795be4264981cc3965429ced3 --bundle bundle-70b32fe01f4841faa11f1802ca7af3d5 --ssh-login --timeout 335h
+# simcloud -c mr2 job post --cpus 16 --gpus 4 --memory 128 --attributes gpu_brand:Tesla --smi current-ubuntu18.04-cuda11.0 --bundle bundle-33025af795be4264981cc3965429ced3 --bundle bundle-7650f40db65d484d93708334bbee1010 --ssh-login --timeout 335h
+
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin 
+
+sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
+sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
+sudo apt-get install software-properties-common
+sudo apt-get update
+sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
+sudo apt-get update
