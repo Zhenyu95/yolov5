@@ -26,7 +26,7 @@ python3 yolov5/run.py
 # pip3 install tqdm>=4.41.0
 
 # # TensorFlow
-# pip3 install tensorflow
+pip3 install tensorflow==2.4.0
 
 # # logging -------------------------------------
 # pip3 install tensorboard>=2.4.1
@@ -42,6 +42,12 @@ python3 yolov5/run.py
 # scikit-learn==0.19.2  # for coreml quantization
 
 # extras --------------------------------------
-# Cython  # for pycocotools https://github.com/cocodataset/cocoapi/issues/172
-# pycocotools>=2.0  # COCO mAP
-# albumentations>=1.0.3
+sudo dpkg -i libcudnn8_8.0.2.39-1+cuda11.0_amd64.deb
+sudo dpkg -i libcudnn8-dev_8.0.2.39-1+cuda11.0_amd64.deb
+
+sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
+sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
+sudo apt-get install software-properties-common -y
+sudo apt-get update
+sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
+sudo apt-get update
