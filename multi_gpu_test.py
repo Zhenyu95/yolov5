@@ -1,19 +1,14 @@
 import tensorflow as tf
-import numpy as np
 import os
-import PIL
 import PIL.Image
 import tensorflow as tf
 from tensorflow.python.data.ops.dataset_ops import AUTOTUNE
-import tensorflow_datasets as tfds
-from matplotlib import pyplot as plt
 from tensorflow.keras.layers import Conv2D, Input, MaxPooling2D, Dropout, concatenate, UpSampling2D
 from tensorflow.keras.models import Model
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 DATA_DIR = '/Users/zhenyu/Desktop/data/image/'
-IMG_HEIGHT = 4032
-IMG_WIDTH = 3008
+IMG_HEIGHT = 512
+IMG_WIDTH = 512
 IMG_DIR = 'image'
 LABEL_DIR = 'binary'
 AUTOTUNE = tf.data.AUTOTUNE
@@ -74,7 +69,7 @@ val_ds = val_ds.map(process_path, num_parallel_calls=AUTOTUNE)
 
 # Batch the input data
 BUFFER_SIZE = len(train_ds)
-BATCH_SIZE_PER_REPLICA = 8
+BATCH_SIZE_PER_REPLICA = 4
 GLOBAL_BATCH_SIZE = BATCH_SIZE_PER_REPLICA * strategy.num_replicas_in_sync
 
 
@@ -93,7 +88,7 @@ train_dist_dataset = strategy.experimental_distribute_dataset(train_ds)
 val_dist_dataset = strategy.experimental_distribute_dataset(val_ds)
 
 # Create the model architecture
-def create_model(img_size=(4032, 3008, 3)):
+def create_model(img_size=(512, 512, 3)):
     inputs = Input(img_size)
     conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(inputs)
     conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv1)
@@ -140,22 +135,10 @@ def create_model(img_size=(4032, 3008, 3)):
 
 
 with strategy.scope():
-    # We will use sparse categorical crossentropy as always. But, instead of having the loss function
-    # manage the map reduce across GPUs for us, we'll do it ourselves with a simple algorithm.
-    # Remember -- the map reduce is how the losses get aggregated
-    # Set reduction to `none` so we can do the reduction afterwards and divide byglobal batch size.
-    # Otherwise, the loss from different devices will be aggregated automatically
     loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True, reduction=tf.keras.losses.Reduction.NONE)
 
     def compute_loss(masks, predictions):
-        # Compute Loss uses the loss object to compute the loss
-        # Notice that per_example_loss will have an entry per GPU
-        # so in this case there'll be 2 -- i.e. the loss for each replica
         per_example_loss = loss_object(masks, predictions)
-        # You can print it to see it -- you'll get output like this:
-        # Tensor("sparse_categorical_crossentropy/weighted_loss/Mul:0", shape=(48,), dtype=float32, device=/job:localhost/replica:0/task:0/device:GPU:0)
-        # Tensor("replica_1/sparse_categorical_crossentropy/weighted_loss/Mul:0", shape=(48,), dtype=float32, device=/job:localhost/replica:0/task:0/device:GPU:1)
-        # Note in particular that replica_0 isn't named in the weighted_loss -- the first is unnamed, the second is replica_1 etc
         print(per_example_loss)
         return tf.nn.compute_average_loss(per_example_loss, global_batch_size=GLOBAL_BATCH_SIZE)
 
