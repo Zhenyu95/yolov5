@@ -149,6 +149,9 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         if pt:
             visualize = increment_path(save_dir / Path(path).stem, mkdir=True) if visualize else False
             pred = model(img, augment=augment, visualize=visualize)[0]
+            with open('shape.txt', 'w') as file:
+                file.write(str(pred))
+                file.write(str(pred.shape))
         elif onnx:
             if dnn:
                 net.setInput(img)
