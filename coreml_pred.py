@@ -1,4 +1,4 @@
-from utils.general import scale_coords, non_max_suppression, xyxy2xywh
+from utils.general import scale_coords, non_max_suppression, xyxy2xywh, xywhn2xyxy, xyxy2xywhn
 import coremltools
 import torch
 import numpy as np
@@ -30,7 +30,7 @@ conf_thres = .2
 
 
 if MODE == 'debug':
-    COREML_MODEL = "/Users/zhenyu/Desktop/exp6/weights/best.mlmodel"
+    COREML_MODEL = "/Users/zhenyu/Box/MLProject:IphoneAOI/weights/yolov5l6_3072*2304_20211116/weights/best.mlmodel"
     IMAGE_FOLDER = "/Users/zhenyu/Desktop/val/"
     OUT_FOLDER = "/Users/zhenyu/Desktop/test/"
 else:
@@ -84,10 +84,10 @@ def eval(file_name):
         y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * anchor_grid[i]  # wh
         z.append(y.view(bs, -1, no))
     
-    pred = (torch.cat(z, 1), x)[0]
+    # pred = (torch.cat(z, 1), x)[0]
+    pred = torch.cat(z, 1)
 
     pred = non_max_suppression(pred, conf_thres, .3, classes=None, agnostic=False)
-    pred_reserve = pred.copy()
 
     # Process detections
     for i, det in enumerate(pred):  # detections per image
@@ -95,8 +95,7 @@ def eval(file_name):
 
         if det is not None and len(det):
             # Rescale boxes from img_size to im0 size
-#             det[:, :4] = scale_coords(resized.size, det[:, :4], source.size).round()
-            det = det[((det[:, 0]-det[:, 2])*(det[:, 1]-det[:, 3])) > 80]
+            # det = det[((det[:, 0]-det[:, 2])*(det[:, 1]-det[:, 3])) > 80]
 
             # Print results
             for c in det[:, -1].unique():
@@ -107,13 +106,16 @@ def eval(file_name):
             for *xyxy, conf, cls in det:
                 if SAVE_TXT:  # Write to file
 #                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)/np.array([3024, 4032, 3024, 4032]))).view(-1).tolist()
-                    xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)/np.array([2304, 3072, 2304, 3072]))).view(-1).tolist()
+                    # xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)/torch.tensor([2304, 3072, 3024, 4032]).view(1,4))).view(-1).tolist()
+                    xywh = xyxy2xywhn(torch.tensor(xyxy).view(1, 4), w=IMG_SIZE[0], h=IMG_SIZE[1]).view(-1).tolist()
                     with open(os.path.join(OUT_FOLDER, '{}.txt'.format(file_name[:-4])), 'a') as f:
                         f.write(('%g ' * 5 + '\n') % (cls, *xywh))
                 if SAVE_IMG:
-                    draw = PIL.ImageDraw.Draw(source)
-                    draw.rectangle(np.array(torch.tensor(xyxy).view(2, 2)), outline='red')
-                    source.save(os.path.join(OUT_FOLDER, '{}.jpg'.format(file_name[:-4])))
+                    draw = PIL.ImageDraw.Draw(resized)
+                    # xyxyn = xywhn2xyxy(torch.tensor(xywh).view(1, 4), w=IMG_SIZE[0], h=IMG_SIZE[1]).type(torch.uint8).view(2, 2)
+                    # print(xyxyn)
+                    draw.rectangle(np.array(torch.tensor(xyxy).view(2,2)), outline='red')
+                    resized.save(os.path.join(OUT_FOLDER, '{}.jpg'.format(file_name[:-4])))
 
 def debug():
     global model
