@@ -1,22 +1,23 @@
-from utils.general import scale_coords, non_max_suppression, xyxy2xywh, save_one_box
+from utils.general import scale_coords, non_max_suppression, xyxy2xywh
 import coremltools
 import torch
 import numpy as np
 import random
 import os
 import PIL.Image
+import PIL.ImageDraw 
 import shutil
 import time
 
 MODE = 'debug'
-SAVE_IMG = False
+SAVE_IMG = True
 VIEW_IMG = False
 SAVE_TXT = True
 CAT_NAMES = ['Screw', 'unknown']
 COLORS = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(CAT_NAMES))]
 PATH = "./"
 ANCHORS = ([116,90, 156,198, 373,326], [30,61, 62,45, 59,119], [10,13, 16,30, 33,23]) # from <model>.yml
-IMG_SIZE = (2560, 2560)
+IMG_SIZE = (2304, 3072)
 nc = len(CAT_NAMES)
 nl = len(ANCHORS)
 na = len(ANCHORS[0]) // 2
@@ -24,12 +25,12 @@ no = nc + 5  # number of outputs per anchor
 grid = [torch.zeros(1)] * nl  # init grid
 a = torch.tensor(ANCHORS).float().view(nl, -1, 2)
 anchor_grid = a.clone().view(nl, 1, -1, 1, 1, 2)
-stride = [32, 16, 8] # check your model config
-conf_thres = .3
+stride = [32, 8, 16] # check your model config
+conf_thres = .2
 
 
 if MODE == 'debug':
-    COREML_MODEL = "/Users/zhenyu/Documents/Scripts/IphoneAOI/yolov5/best_1106.mlmodel"
+    COREML_MODEL = "/Users/zhenyu/Desktop/exp6/weights/best.mlmodel"
     IMAGE_FOLDER = "/Users/zhenyu/Desktop/val/"
     OUT_FOLDER = "/Users/zhenyu/Desktop/test/"
 else:
@@ -50,6 +51,7 @@ def make_grid(nx=20, ny=20):
     yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
     return torch.stack((xv, yv), 2).view((1, 1, ny, nx, 2)).float()
 
+
 def resize_image(source_image):
     # background = source_image.crop((0,0, 2560, 2560))
 #TODO: BUG HERE!!!!!!!!!!!!!!
@@ -60,23 +62,10 @@ def resize_image(source_image):
     return background
 
 def eval(file_name):   
-    # image = resize_image(image)
-    # _, img = load_image(IMAGE_FOLDER+file_name, resize_to=None)
-    
     source = PIL.Image.open(os.path.join(IMAGE_FOLDER, file_name))
-    cropped = source.crop((0,0,2560,2560))
-    # cropped.save('{}{}_cropped.jpg'.format(IMAGE_FOLDER,file_name[:-4]))
-    # img = PIL.Image.open('{}{}_cropped.jpg'.format(IMAGE_FOLDER,file_name[:-4]))
-    # resized = resize_image(source)
-    # image0shape = np.array(image).astype(np.float32).shape
-    
-    # img_np = np.array(img).astype(np.float32)
-#TODO: BUG HERE!!!!!!!!!!!!!!!
-    # img = torch.zeros((1,3,IMG_SIZE[0],IMG_SIZE[1]))
-    # img[0, :, :, :] = torch.Tensor(np.array(resized)).permute(2, 0, 1)
-    # im0 = np.array(source)
+    resized = resize_image(source)
 
-    predictions = model.predict({'image': cropped})
+    predictions = model.predict({'image': resized})
 
     z = []  # inference output
     x = []
@@ -94,10 +83,11 @@ def eval(file_name):
         y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + grid[i]) * stride[i]  # xy
         y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * anchor_grid[i]  # wh
         z.append(y.view(bs, -1, no))
-
+    
     pred = (torch.cat(z, 1), x)[0]
 
-    pred = non_max_suppression(pred, conf_thres, .5, classes=None, agnostic=False)
+    pred = non_max_suppression(pred, conf_thres, .3, classes=None, agnostic=False)
+    pred_reserve = pred.copy()
 
     # Process detections
     for i, det in enumerate(pred):  # detections per image
@@ -105,7 +95,8 @@ def eval(file_name):
 
         if det is not None and len(det):
             # Rescale boxes from img_size to im0 size
-            # det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
+#             det[:, :4] = scale_coords(resized.size, det[:, :4], source.size).round()
+            det = det[((det[:, 0]-det[:, 2])*(det[:, 1]-det[:, 3])) > 80]
 
             # Print results
             for c in det[:, -1].unique():
@@ -115,28 +106,28 @@ def eval(file_name):
             # Write results
             for *xyxy, conf, cls in det:
                 if SAVE_TXT:  # Write to file
-                    xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / 1280).view(-1).tolist()  # normalized xywh
-                    with open(os.path.join(OUT_FOLDER, 'result_1.txt'), 'a') as f:
-                        f.write(('%g ' * 5 + '\n') % (cls, *xywh))  # label format
-        cropped.save(os.path.join(OUT_FOLDER, 'result_1.jpg'))
-# TODO: BUG HERE!!!!!!!!!!!
-    #             if SAVE_IMG or VIEW_IMG:  # Add bbox to image
-    #                 label = '%s %.2f' % (CAT_NAMES[int(cls)], conf)
-    #                 save_one_box(xyxy, im0, file='label.jpg', BGR=True)
-
-    # if SAVE_IMG:
-    #     cv2.imwrite(os.path.join(OUT_FOLDER, file_name), im0)
+#                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)/np.array([3024, 4032, 3024, 4032]))).view(-1).tolist()
+                    xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)/np.array([2304, 3072, 2304, 3072]))).view(-1).tolist()
+                    with open(os.path.join(OUT_FOLDER, '{}.txt'.format(file_name[:-4])), 'a') as f:
+                        f.write(('%g ' * 5 + '\n') % (cls, *xywh))
+                if SAVE_IMG:
+                    draw = PIL.ImageDraw.Draw(source)
+                    draw.rectangle(np.array(torch.tensor(xyxy).view(2, 2)), outline='red')
+                    source.save(os.path.join(OUT_FOLDER, '{}.jpg'.format(file_name[:-4])))
 
 def debug():
     global model
-    if os.path.exists(OUT_FOLDER):
-        shutil.rmtree(OUT_FOLDER)
-    os.makedirs(OUT_FOLDER)
+    # if os.path.exists(OUT_FOLDER):
+    #     shutil.rmtree(OUT_FOLDER)
+    # os.makedirs(OUT_FOLDER)
 
     # Load the model
     model = coremltools.models.model.MLModel(COREML_MODEL)
 
-    eval('2.jpg')
+    # for images in os.listdir(IMAGE_FOLDER):
+    #     if images.endswith(".jpg"):
+    #         eval(images)
+    eval('P9YI6XTHXQ.jpg')
     
     
 def main():
