@@ -8,30 +8,40 @@ import PIL.Image
 import PIL.ImageDraw 
 import shutil
 import time
+from tqdm import tqdm
 
+# Parameters and Global variables
 MODE = 'debug'
 SAVE_IMG = True
 VIEW_IMG = False
 SAVE_TXT = True
 CAT_NAMES = ['Screw', 'unknown']
-COLORS = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(CAT_NAMES))]
-PATH = "./"
-# ANCHORS = ([116,90, 156,198, 373,326], [30,61, 62,45, 59,119], [10,13, 16,30, 33,23]) # from <model>.yml
+
+# Anchor box can be checked in pytorch model
 ANCHORS = ([2.375,3.375, 5.5,5, 4.75,11.75], 
            [6,4.25, 5.375,9.5, 11.25,8.5625], 
            [4.375,9.40625, 9.46875,8.25, 7.43750,16.93750],
            [6.81250,9.60938, 11.54688,5.93750, 14.45312,12.37500])
+# stide can be check in pytorch model
+stride = [8, 16, 32, 64]
+# target size of input image (width, height)
 IMG_SIZE = (2304, 3072)
+# confidence threshold
+conf_thres = .2
+
+
+# Params and global variables that should be kept as it is
+COLORS = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(CAT_NAMES))]
+PATH = "./"
 nc = len(CAT_NAMES)
 nl = len(ANCHORS)
 na = len(ANCHORS[0]) // 2
-no = nc + 5  # number of outputs per anchor
-grid = [torch.zeros(1)] * nl  # init grid
+no = nc + 5
+# initiate grid and anchor_grid
+grid = [torch.zeros(1)] * nl
 a = torch.tensor(ANCHORS).float().view(nl, -1, 2)
 anchor_grid = [torch.zeros(1)] * nl
-# anchor_grid = a.clone().view(nl, 1, -1, 1, 1, 2)
-stride = [8, 16, 32, 64] # check your model config
-conf_thres = .2
+
 
 
 if MODE == 'debug':
@@ -43,25 +53,13 @@ else:
     IMAGE_FOLDER = "/Users/iphoneaoi/Documents/yolov5/images/"
     OUT_FOLDER = "/Users/iphoneaoi/Documents/yolov5/runs/detect/"
 
-
-def load_image(path, resize_to=None):
-    # resize_to: (Width, Height)
-    img = PIL.Image.open(path)
-    if resize_to is not None:
-        img = img.resize(resize_to, PIL.Image.ANTIALIAS)
-    img_np = np.array(img).astype(np.float32)
-    return img_np, img
-
 def make_grid(nx=20, ny=20, i=0):
     yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
     grid = torch.stack((xv, yv), 2).view((1, 1, ny, nx, 2)).float()
     anchor_grid = (a[i] * stride[i]).view((1, na, 1, 1, 2)).expand(1, na, ny, nx, 2).float()
     return grid, anchor_grid
 
-
 def resize_image(source_image):
-    # background = source_image.crop((0,0, 2560, 2560))
-#TODO: BUG HERE!!!!!!!!!!!!!!
     background = PIL.Image.new('RGB', IMG_SIZE, "black")
     source_image.thumbnail(IMG_SIZE)
     (w, h) = source_image.size
@@ -124,10 +122,18 @@ def debug():
 
     # Load the model
     model = coremltools.models.model.MLModel(COREML_MODEL)
-
-    for images in os.listdir(IMAGE_FOLDER):
-        if images.endswith(".jpg"):
+    time_tracker = {}
+    time_sum = 0
+    for images in tqdm(os.listdir(IMAGE_FOLDER)):
+        if images.endswith(".jpg") and not images.startswith('.'):
+            t0 = time.time()
             eval(images)
+            delta_t = time.time() - t0
+            time_tracker[images] = delta_t
+    for key, item in time_tracker.items():
+        print('{} takes {} seconds'.format(key, item))
+        time_sum += item
+    print('Averange process time is {}'.format(time_sum/len(time_tracker)))
     # eval('1_4032.jpg')
     
     
