@@ -15,6 +15,7 @@ MODE = 'debug'
 SAVE_IMG = True
 VIEW_IMG = False
 SAVE_TXT = True
+ENSEMBLE = False
 CAT_NAMES = ['Screw', 'unknown']
 
 # Anchor box can be checked in pytorch model
@@ -45,7 +46,8 @@ anchor_grid = [torch.zeros(1)] * nl
 
 
 if MODE == 'debug':
-    COREML_MODEL = "/Users/zhenyu/Box/MLProject:IphoneAOI/weights/yolov5l6_3072*2304_20211116/weights/best.mlmodel"
+    COREML_MODEL = ["/Users/zhenyu/Box/MLProject:IphoneAOI/weights/yolov5l6_3072*2304_20211116/weights/best.mlmodel",
+                    "/Users/zhenyu/Box/MLProject:IphoneAOI/weights/yolov5l6_3072*2304_20211124/weights/best.mlmodel"]
     IMAGE_FOLDER = "/Users/zhenyu/Desktop/val/"
     OUT_FOLDER = "/Users/zhenyu/Desktop/test/"
 else:
@@ -66,9 +68,8 @@ def resize_image(source_image):
     background.paste(source_image, (int((IMG_SIZE[0] - w) / 2), int((IMG_SIZE[1] - h) / 2 )))
     return background
 
-def eval(file_name):   
-    source = PIL.Image.open(os.path.join(IMAGE_FOLDER, file_name))
-    resized = resize_image(source.copy())
+def eval(image, model, file_name):
+    resized = resize_image(image.copy())
 
     predictions = model.predict({'image': resized})
 
@@ -89,52 +90,51 @@ def eval(file_name):
         z.append(y.view(bs, -1, no))
     
     pred = torch.cat(z, 1)
+    
+    return pred
 
-    pred = non_max_suppression(pred, conf_thres, .3, classes=None, agnostic=False)
-
-    # Process detections
-    for i, det in enumerate(pred):  # detections per image
-        p, s = "./", ""
-        label=[]
-
-        if det is not None and len(det):
-            # Rescale boxes from img_size to im0 size
-            det = det[((det[:, 0]-det[:, 2])*(det[:, 1]-det[:, 3])) > 80]
-            for *xyxy, conf, cls in det:
-                if SAVE_TXT:
-                    xywh = xyxy2xywhn(torch.tensor(xyxy).view(1, 4), w=IMG_SIZE[0], h=IMG_SIZE[1]).view(-1).tolist()
-                    label.append(('%g ' * 5 + '\n') % (cls, *xywh))
-                if SAVE_IMG:
-                    draw = PIL.ImageDraw.Draw(resized)
-                    draw.rectangle(np.array(torch.tensor(xyxy).view(2,2)), outline='red')
-        if SAVE_TXT:
-            with open(os.path.join(OUT_FOLDER, '{}.txt'.format(file_name[:-4])), 'a') as f:
-                for line in label:
-                    f.write(line)
-        if SAVE_IMG:
-            resized.save(os.path.join(OUT_FOLDER, '{}.jpg'.format(file_name[:-4])))
 
 def debug():
-    global model
     if os.path.exists(OUT_FOLDER):
         shutil.rmtree(OUT_FOLDER)
     os.makedirs(OUT_FOLDER)
 
+    model_list = []
+    
     # Load the model
-    model = coremltools.models.model.MLModel(COREML_MODEL)
+    for each in COREML_MODEL:
+        model_list.append(coremltools.models.model.MLModel(each))
     time_tracker = {}
     time_sum = 0
-    for images in tqdm(os.listdir(IMAGE_FOLDER)):
-        if images.endswith(".jpg") and not images.startswith('.'):
+    for img_path in tqdm(os.listdir(IMAGE_FOLDER)):
+        if img_path.endswith(".jpg") and not img_path.startswith('.'):
+            image = PIL.Image.open(os.path.join(IMAGE_FOLDER, img_path))
+            draw = PIL.ImageDraw.Draw(image)
+            pred = torch.tensor([])
             t0 = time.time()
-            eval(images)
+            for model in model_list:
+                pred = torch.cat((pred, eval(image, model, img_path)), 1)
+            nms = non_max_suppression(pred, conf_thres, .3, classes=None, agnostic=False)[0]
+            label=[]
+            for *xyxy, _, cls in nms:
+                if SAVE_TXT:
+                    xywh = xyxy2xywhn(torch.tensor(xyxy).view(1, 4), w=IMG_SIZE[0], h=IMG_SIZE[1]).view(-1).tolist()
+                    label.append(('%g ' * 5 + '\n') % (cls, *xywh))
+                if SAVE_IMG:
+                    draw.rectangle(np.array(torch.tensor(xyxy).view(2,2)*1.3125), outline='red', width=6)
+            if SAVE_TXT:
+                with open(os.path.join(OUT_FOLDER, '{}.txt'.format(img_path[:-4])), 'a') as f:
+                    for line in label:
+                        f.write(line)
+            if SAVE_IMG:
+                image.save(os.path.join(OUT_FOLDER, '{}.jpg'.format(img_path[:-4])))
             delta_t = time.time() - t0
-            time_tracker[images] = delta_t
+            time_tracker[img_path] = delta_t
+        break
     for key, item in time_tracker.items():
         print('{} takes {} seconds'.format(key, item))
         time_sum += item
     print('Averange process time is {}'.format(time_sum/len(time_tracker)))
-    # eval('1_4032.jpg')
     
     
 def main():
