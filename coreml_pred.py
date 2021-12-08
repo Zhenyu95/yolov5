@@ -46,8 +46,7 @@ anchor_grid = [torch.zeros(1)] * nl
 
 
 if MODE == 'debug':
-    COREML_MODEL = ["/Users/zhenyu/Box/MLProject:IphoneAOI/weights/yolov5l6_3072*2304_20211116/weights/best.mlmodel",
-                    "/Users/zhenyu/Box/MLProject:IphoneAOI/weights/yolov5l6_3072*2304_20211124/weights/best.mlmodel"]
+    COREML_MODEL = ['/Users/zhenyu/Desktop/best.mlmodel']
     IMAGE_FOLDER = "/Users/zhenyu/Desktop/val/"
     OUT_FOLDER = "/Users/zhenyu/Desktop/test/"
 else:
@@ -130,7 +129,6 @@ def debug():
                 image.save(os.path.join(OUT_FOLDER, '{}.jpg'.format(img_path[:-4])))
             delta_t = time.time() - t0
             time_tracker[img_path] = delta_t
-        break
     for key, item in time_tracker.items():
         print('{} takes {} seconds'.format(key, item))
         time_sum += item

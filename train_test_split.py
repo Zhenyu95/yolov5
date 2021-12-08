@@ -6,11 +6,11 @@ import cv2
 import numpy as np
 from tqdm import tqdm
 
-RAW_IMG_PATH = '/Users/zhenyu/Documents/Scripts/IphoneAOI/Image_Generation_Python_Code/Output/Images/'
-RAW_LABEL_PATH = '/Users/zhenyu/Documents/Scripts/IphoneAOI/Image_Generation_Python_Code/Output/Yolo_Format/'
+RAW_IMG_PATH = '/Users/zhenyu/Documents/Scripts/BatteryAOI/Image_Generation_Python_Code/Output/Images/'
+RAW_LABEL_PATH = '/Users/zhenyu/Documents/Scripts/BatteryAOI/Image_Generation_Python_Code/Output/Yolo_Format/'
 BLANK_IMG_PATH = ''
-IMG_DST = '/Users/zhenyu/Box/MLProject:IphoneAOI/datasets/data_640*640(crop)_20211109/images/'
-LABEL_DST = '/Users/zhenyu/Box/MLProject:IphoneAOI/datasets/data_640*640(crop)_20211109/labels/'
+IMG_DST = '/Users/zhenyu/Library/CloudStorage/Box-Box/MLProject:IphoneAOI/datasets/data_4032*3024_20211205/images/'
+LABEL_DST = '/Users/zhenyu/Library/CloudStorage/Box-Box/MLProject:IphoneAOI/datasets/data_4032*3024_20211205/labels/'
 TRAIN = 'train/'
 TEST = 'test/'
 # IMG_DST = '/Users/zhenyu/Desktop/test/'
@@ -81,7 +81,7 @@ def check_label(img_list, label_list, raw_img_path=RAW_IMG_PATH):
     print('Checking labels ...')
     li = [f for f in img_list if not f[:-4]+'.txt' in label_list]
     for each in li:
-        shutil.rmtree(raw_img_path+each)
+        shutil.rmtree(os.path.join(raw_img_path,each))
         print('The label of {} is not found, the image is removed!'.format(each))
     print('All labels checked!')
     
@@ -108,8 +108,8 @@ def train_test_split(raw_img_path=RAW_IMG_PATH, raw_label_path=RAW_LABEL_PATH, i
     check_label(img_list, label_list)
     train_list = random.sample(img_list, int(ratio*len(img_list)))
     test_list = [item for item in img_list if item not in train_list]
-    move(train_list, img_dst=img_dst+train, label_dst=label_dst+train, crop=True)
-    move(test_list, img_dst=img_dst+test, label_dst=label_dst+test, crop=True)
+    move(train_list, img_dst=img_dst+train, label_dst=label_dst+train, crop=False)
+    move(test_list, img_dst=img_dst+test, label_dst=label_dst+test, crop=False)
     # add_background(img_dst=img_dst+train, k=int(RATIO*BACKGROUND_NUMBER))
     # add_background(img_dst=img_dst+test, k=int((1-RATIO)*BACKGROUND_NUMBER))
     
