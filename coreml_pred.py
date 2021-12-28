@@ -1,3 +1,4 @@
+from coremltools.models import model
 from utils.general import scale_coords, non_max_suppression, xyxy2xywh, xywhn2xyxy, xyxy2xywhn
 import coremltools
 import torch
@@ -12,23 +13,29 @@ from tqdm import tqdm
 
 # Parameters and Global variables
 MODE = 'debug'
-SAVE_IMG = True
+SAVE_IMG = False
 VIEW_IMG = False
 SAVE_TXT = True
-ENSEMBLE = False
 CAT_NAMES = ['Screw', 'unknown']
 
 # Anchor box can be checked in pytorch model
-ANCHORS = ([2.375,3.375, 5.5,5, 4.75,11.75], 
-           [6,4.25, 5.375,9.5, 11.25,8.5625], 
-           [4.375,9.40625, 9.46875,8.25, 7.43750,16.93750],
-           [6.81250,9.60938, 11.54688,5.93750, 14.45312,12.37500])
+# ANCHORS = ([2.375,3.375, 5.5,5, 4.75,11.75], 
+#            [6,4.25, 5.375,9.5, 11.25,8.5625], 
+#            [4.375,9.40625, 9.46875,8.25, 7.43750,16.93750],
+#            [6.81250,9.60938, 11.54688,5.93750, 14.45312,12.37500])
+ANCHORS = ([1.25000,  1.62500, 2.00000,  3.75000, 4.12500,  2.87500], 
+           [1.87500,  3.81250, 3.87500,  2.81250, 3.68750,  7.43750], 
+           [3.62500,  2.81250, 4.87500,  6.18750, 11.65625, 10.18750],
+           )
 # stide can be check in pytorch model
-stride = [8, 16, 32, 64]
+# stride = [8, 16, 32, 64]
+stride = [8, 16, 32]
 # target size of input image (width, height)
-IMG_SIZE = (2304, 3072)
+IMG_SIZE = (960, 1280)
 # confidence threshold
-conf_thres = .2
+conf_thres = .35
+area_thres = 300
+edge_thres = 0.002
 
 
 # Params and global variables that should be kept as it is
@@ -46,11 +53,19 @@ anchor_grid = [torch.zeros(1)] * nl
 
 
 if MODE == 'debug':
-    COREML_MODEL = ['/Users/zhenyu/Desktop/best.mlmodel']
-    IMAGE_FOLDER = "/Users/zhenyu/Desktop/val/"
-    OUT_FOLDER = "/Users/zhenyu/Desktop/test/"
+    COREML_MODEL = ['/Users/zhenyu/Desktop/exp5/weights/best.mlmodel',
+                    # '/Users/zhenyu/Desktop/runs/train/exp2/weights/best.mlmodel',
+                    # '/Users/zhenyu/Desktop/runs/train/exp3/weights/best.mlmodel'
+                    ]
+    # IMAGE_FOLDER = "/Users/zhenyu/Library/CloudStorage/Box-Box/MLProject:IphoneAOI/datasets/After T-Cowling/NG/"
+    IMAGE_FOLDER = '/Users/zhenyu/Desktop/validation/images/test/'
+    # OUT_FOLDER = "/Users/zhenyu/Library/CloudStorage/Box-Box/MLProject:IphoneAOI/datasets/After T-Cowling/NG/"
+    OUT_FOLDER = '/Users/zhenyu/Desktop/pred/'
 else:
-    COREML_MODEL = "/Users/iphoneaoi/Documents/yolov5/best_1106.mlmodel"
+    COREML_MODEL = ['/Users/iphoneaoi/Documents/yolov5/best1.mlmodel',
+                    '/Users/iphoneaoi/Documents/yolov5/best2.mlmodel',
+                    '/Users/iphoneaoi/Documents/yolov5/best3.mlmodel',
+                    ]
     IMAGE_FOLDER = "/Users/iphoneaoi/Documents/yolov5/images/"
     OUT_FOLDER = "/Users/iphoneaoi/Documents/yolov5/runs/detect/"
 
@@ -74,13 +89,13 @@ def eval(image, model, file_name):
 
     z = []  # inference output
     x = []
-    for head in ['var_1763', 'var_1778', 'var_1793', 'var_1808']:
+    # for head in ['var_1763', 'var_1778', 'var_1793', 'var_1808']:
+    for head in ['var_1625', 'var_1640', 'var_1655']:
         x.append(torch.Tensor(predictions[head]))
 
     for i in range(nl):
         bs, _, ny, nx, _ = x[i].shape
 
-        # if grid[i].shape[2:4] != x[i].shape[2:4]:
         grid[i], anchor_grid = make_grid(nx, ny, i)
 
         y = x[i].sigmoid()
@@ -93,10 +108,54 @@ def eval(image, model, file_name):
     return pred
 
 
+def pred(img_path, model_list):
+    image = PIL.Image.open(os.path.join(IMAGE_FOLDER, img_path))
+    pred = torch.tensor([])
+    for model in model_list:
+        pred = torch.cat((pred, eval(image, model, img_path)), 1)
+    nms = non_max_suppression(pred, conf_thres, .3, classes=None, agnostic=False)[0]
+    label=[]
+    for *xyxy, _, cls in nms:
+        xywh = xyxy2xywhn(torch.tensor(xyxy).view(1, 4), w=IMG_SIZE[0], h=IMG_SIZE[1]).view(-1).tolist()
+        if (xywh[2]*xywh[3]*4032*3024 > area_thres) and (xywh[0] > edge_thres) and (xywh[0] < 1-edge_thres) and (xywh[1] > edge_thres) and (xywh[1] < 1-edge_thres):
+            if SAVE_TXT:
+                label.append(('%g ' * 5 + '\n') % (cls, *xywh))
+            if SAVE_IMG:
+                draw = PIL.ImageDraw.Draw(image)
+                draw.rectangle(np.array(torch.tensor(xyxy).view(2,2)*1.3125), outline='red', width=6)
+    if SAVE_TXT and (len(label)!=0):
+        with open(os.path.join(OUT_FOLDER, '{}.txt'.format(img_path[:-4])), 'a') as f:
+            for line in label:
+                f.write(line)
+        # with open(os.path.join(OUT_FOLDER, img_path.split('/')[0], 'classes.txt'), 'a') as f:
+        #     f.write('screw\n')
+    if SAVE_IMG:
+        image.save(os.path.join(OUT_FOLDER, '{}.jpg'.format(img_path[:-4])))
+
+
 def debug():
-    if os.path.exists(OUT_FOLDER):
-        shutil.rmtree(OUT_FOLDER)
-    os.makedirs(OUT_FOLDER)
+    model_list = []
+    
+    # Load the model
+    for each in COREML_MODEL:
+        print('Loading model {}...'.format(each))
+        model_list.append(coremltools.models.model.MLModel(each))
+        print('Model {} loaded'.format(each))
+    time_tracker = {}
+    time_sum = 0
+    for img_path in tqdm(os.listdir(IMAGE_FOLDER)):
+        t0 = time.time()
+        if img_path.endswith(".jpg"):
+            pred(img_path, model_list)
+        delta_t = time.time() - t0
+        time_tracker[img_path] = delta_t
+    for key, item in time_tracker.items():
+        print('{} takes {} seconds'.format(key, item))
+        time_sum += item
+    print('Averange process time is {}'.format(time_sum/len(time_tracker)))
+    
+
+def label_helper():
 
     model_list = []
     
@@ -105,39 +164,29 @@ def debug():
         model_list.append(coremltools.models.model.MLModel(each))
     time_tracker = {}
     time_sum = 0
-    for img_path in tqdm(os.listdir(IMAGE_FOLDER)):
-        if img_path.endswith(".jpg") and not img_path.startswith('.'):
-            image = PIL.Image.open(os.path.join(IMAGE_FOLDER, img_path))
-            draw = PIL.ImageDraw.Draw(image)
-            pred = torch.tensor([])
+    for img_folder in tqdm([each for each in os.listdir(IMAGE_FOLDER) if not each.startswith('.')]):
+        for img_path in [each for each in os.listdir(os.path.join(IMAGE_FOLDER, img_folder)) if each.endswith('.jpg')]:
+            if '{}.txt'.format(img_path[:-4]) in os.listdir(os.path.join(IMAGE_FOLDER, img_folder)):
+                break
             t0 = time.time()
-            for model in model_list:
-                pred = torch.cat((pred, eval(image, model, img_path)), 1)
-            nms = non_max_suppression(pred, conf_thres, .3, classes=None, agnostic=False)[0]
-            label=[]
-            for *xyxy, _, cls in nms:
-                if SAVE_TXT:
-                    xywh = xyxy2xywhn(torch.tensor(xyxy).view(1, 4), w=IMG_SIZE[0], h=IMG_SIZE[1]).view(-1).tolist()
-                    label.append(('%g ' * 5 + '\n') % (cls, *xywh))
-                if SAVE_IMG:
-                    draw.rectangle(np.array(torch.tensor(xyxy).view(2,2)*1.3125), outline='red', width=6)
-            if SAVE_TXT:
-                with open(os.path.join(OUT_FOLDER, '{}.txt'.format(img_path[:-4])), 'a') as f:
-                    for line in label:
-                        f.write(line)
-            if SAVE_IMG:
-                image.save(os.path.join(OUT_FOLDER, '{}.jpg'.format(img_path[:-4])))
+            img_path = os.path.join(img_folder, img_path)
+            pred(img_path, model_list)
             delta_t = time.time() - t0
             time_tracker[img_path] = delta_t
     for key, item in time_tracker.items():
         print('{} takes {} seconds'.format(key, item))
         time_sum += item
-    print('Averange process time is {}'.format(time_sum/len(time_tracker)))
+    print('Averange process time is {}'.format(time_sum/len(time_tracker)))    
     
     
 def main():
-    model = coremltools.models.model.MLModel(COREML_MODEL)
-    print('model 1 loaded')
+    model_list = []
+    
+    # Load the model
+    for each in COREML_MODEL:
+        print('Loading model {}...'.format(each))
+        model_list.append(coremltools.models.model.MLModel(each))
+        print('Model {} loaded'.format(each))
 
     m=False
     while True:
@@ -145,7 +194,8 @@ def main():
             m = True
         
         if os.path.isfile(IMAGE_FOLDER+'1.jpg') & m:
-            eval(IMAGE_FOLDER+'1.jpg')
+            pred(IMAGE_FOLDER+'1.jpg', model_list
+                 )
             m=False
         
         else:
