@@ -1,3 +1,3 @@
 # unzip and move files
-mv /Users/zhenyu/Desktop/demo.zip /root/
-unzip demo.zip
+cd yolov5
+python3 train.py --epochs 10 --data coco128.yaml --weights yolov5s.pt

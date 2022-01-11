@@ -16,7 +16,8 @@ MODE = 'debug'
 SAVE_IMG = False
 VIEW_IMG = False
 SAVE_TXT = True
-CAT_NAMES = ['Screw', 'unknown']
+# CAT_NAMES = ['Screw', 'unknown']
+CAT_NAMES = ['Screw']
 
 # Anchor box can be checked in pytorch model
 # ANCHORS = ([2.375,3.375, 5.5,5, 4.75,11.75], 
@@ -25,18 +26,20 @@ CAT_NAMES = ['Screw', 'unknown']
 #            [6.81250,9.60938, 11.54688,5.93750, 14.45312,12.37500])
 ANCHORS = ([1.25000,  1.62500, 2.00000,  3.75000, 4.12500,  2.87500], 
            [1.87500,  3.81250, 3.87500,  2.81250, 3.68750,  7.43750], 
-           [3.62500,  2.81250, 4.87500,  6.18750, 11.65625, 10.18750],
-           )
+           [3.62500,  2.81250, 4.87500,  6.18750, 11.65625, 10.18750])
 # stide can be check in pytorch model
 # stride = [8, 16, 32, 64]
 stride = [8, 16, 32]
 # target size of input image (width, height)
-IMG_SIZE = (960, 1280)
+# IMG_SIZE = (960, 1280)
+# IMG_SIZE = (1440, 1920)
+# IMG_SIZE = (1472, 1920)
+# IMG_SIZE = (2304, 3072)
+IMG_SIZE = (1920, 2560)
 # confidence threshold
 conf_thres = .35
 area_thres = 300
 edge_thres = 0.002
-
 
 # Params and global variables that should be kept as it is
 COLORS = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(CAT_NAMES))]
@@ -53,14 +56,15 @@ anchor_grid = [torch.zeros(1)] * nl
 
 
 if MODE == 'debug':
-    COREML_MODEL = ['/Users/zhenyu/Desktop/exp5/weights/best.mlmodel',
+    COREML_MODEL = ['/Users/zhenyu/Downloads/station1_0107.mlmodel',
                     # '/Users/zhenyu/Desktop/runs/train/exp2/weights/best.mlmodel',
                     # '/Users/zhenyu/Desktop/runs/train/exp3/weights/best.mlmodel'
                     ]
     # IMAGE_FOLDER = "/Users/zhenyu/Library/CloudStorage/Box-Box/MLProject:IphoneAOI/datasets/After T-Cowling/NG/"
-    IMAGE_FOLDER = '/Users/zhenyu/Desktop/validation/images/test/'
-    # OUT_FOLDER = "/Users/zhenyu/Library/CloudStorage/Box-Box/MLProject:IphoneAOI/datasets/After T-Cowling/NG/"
-    OUT_FOLDER = '/Users/zhenyu/Desktop/pred/'
+    IMAGE_FOLDER = '/Users/zhenyu/Desktop/dataset_0111/images/test/'
+    # IMAGE_FOLDER = '/Users/zhenyu/Library/CloudStorage/Box-Box/MLProject:IphoneAOI/datasets/After T-Cowling/NG_Image/FOV4_Roy/'
+    OUT_FOLDER = "/Users/zhenyu/Desktop/pred/"
+    # OUT_FOLDER = '/Users/zhenyu/Library/CloudStorage/Box-Box/MLProject:IphoneAOI/datasets/After T-Cowling/Overkill/Results_289/FOV4_31_conf'
 else:
     COREML_MODEL = ['/Users/iphoneaoi/Documents/yolov5/best1.mlmodel',
                     '/Users/iphoneaoi/Documents/yolov5/best2.mlmodel',
@@ -90,7 +94,10 @@ def eval(image, model, file_name):
     z = []  # inference output
     x = []
     # for head in ['var_1763', 'var_1778', 'var_1793', 'var_1808']:
-    for head in ['var_1625', 'var_1640', 'var_1655']:
+    # for head in ['var_1625', 'var_1640', 'var_1655']:
+    # for head in ['var_1295', 'var_1308', 'var_1321']:
+    # for head in ['var_2093', 'var_2108', 'var_2123', 'var_2138']:
+    for head in ['var_1383', 'var_1396', 'var_1409']:
         x.append(torch.Tensor(predictions[head]))
 
     for i in range(nl):
@@ -115,14 +122,16 @@ def pred(img_path, model_list):
         pred = torch.cat((pred, eval(image, model, img_path)), 1)
     nms = non_max_suppression(pred, conf_thres, .3, classes=None, agnostic=False)[0]
     label=[]
-    for *xyxy, _, cls in nms:
+    for *xyxy, conf, cls in nms:
         xywh = xyxy2xywhn(torch.tensor(xyxy).view(1, 4), w=IMG_SIZE[0], h=IMG_SIZE[1]).view(-1).tolist()
         if (xywh[2]*xywh[3]*4032*3024 > area_thres) and (xywh[0] > edge_thres) and (xywh[0] < 1-edge_thres) and (xywh[1] > edge_thres) and (xywh[1] < 1-edge_thres):
             if SAVE_TXT:
-                label.append(('%g ' * 5 + '\n') % (cls, *xywh))
+                label.append(('%g ' * 6 + '\n') % (cls, *xywh, conf))
             if SAVE_IMG:
                 draw = PIL.ImageDraw.Draw(image)
-                draw.rectangle(np.array(torch.tensor(xyxy).view(2,2)*1.3125), outline='red', width=6)
+                draw.rectangle(np.array(torch.tensor(xyxy).view(2,2)*2.1), outline='red', width=6)
+                font = PIL.ImageFont.truetype("SFCompact.ttf", 70)
+                draw.text(np.array(torch.tensor(xyxy).view(2,2)*2.1)[0], str(conf)[7:12], fill ="red", font=font)
     if SAVE_TXT and (len(label)!=0):
         with open(os.path.join(OUT_FOLDER, '{}.txt'.format(img_path[:-4])), 'a') as f:
             for line in label:
@@ -150,7 +159,7 @@ def debug():
         delta_t = time.time() - t0
         time_tracker[img_path] = delta_t
     for key, item in time_tracker.items():
-        print('{} takes {} seconds'.format(key, item))
+        # print('{} takes {} seconds'.format(key, item))
         time_sum += item
     print('Averange process time is {}'.format(time_sum/len(time_tracker)))
     
@@ -174,7 +183,7 @@ def label_helper():
             delta_t = time.time() - t0
             time_tracker[img_path] = delta_t
     for key, item in time_tracker.items():
-        print('{} takes {} seconds'.format(key, item))
+        # print('{} takes {} seconds'.format(key, item))
         time_sum += item
     print('Averange process time is {}'.format(time_sum/len(time_tracker)))    
     
