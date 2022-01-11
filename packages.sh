@@ -12,7 +12,8 @@ sudo -H pip3 install --ignore-installed PyYAML
 git clone https://github.com/Zhenyu95/yolov5
 pip3 install -r yolov5/requirements.txt
 
-sh /root/yolov5/training.sh
+cd yolov5
+sh training.sh
 
 # # base ----------------------------------------
 

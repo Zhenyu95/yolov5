@@ -1,3 +1,7 @@
 # unzip and move files
-cd yolov5
+ls
 python3 train.py --epochs 10 --data coco128.yaml --weights yolov5s.pt
+cd ~
+ls
+cd ..
+ls
