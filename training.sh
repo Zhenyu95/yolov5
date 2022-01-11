@@ -1,5 +1,6 @@
 # unzip and move files
-ls
-python3 train.py --epochs 10 --data coco128.yaml --weights yolov5s.pt
+mv /Users/zhenyu/Desktop/dataset_1230.zip /root/
 cd ..
-ls
+unzip dataset_1230.zip
+cd yolov5
+python3 -m torch.distributed.launch --nproc_per_node 8 train.py --batch 32 --data iphoneaoi.yaml --weights yolov5x.pt --device 0,1,2,3,4,5,6,7 --epochs 2 --img 1920 --rect
