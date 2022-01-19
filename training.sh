@@ -9,4 +9,4 @@ python3 -m torch.distributed.launch --nproc_per_node 4 train.py --batch 24 --dat
 #   nohup python3 train.py --epochs 50 --data iphoneaoi.yaml --weights yolov5x.pt --cache --evolve 500 --batch 32 --img 1920 --rect --device $i > evolve_gpu_$i.log &
 # done
 python3 export.py --data data/iphoneaoi.yaml --weights runs/train/exp/weights/best.pt --img 1920 1440 --include coreml
-zip -r runs.zip runs/
+# zip -r runs.zip runs/
