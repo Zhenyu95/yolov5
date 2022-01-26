@@ -5,17 +5,19 @@ mv /dataset_test_OK.z02 /root/
 mv /dataset_test_OK.z03 /root/
 mv /dataset_test_OK.zip /root/
 mv /OK_Images_496.zip /root/
+mv /dataset_test_NG.zip /root/
+
 cd ..
-zip -s- dataset_test_OK.* -O dataset_test_OK_all.zip
-unzip dataset_test_OK_all.zip
+zip -FF dataset_test_OK.zip --out dataset_test_OK_full.zip
+unzip dataset_test_OK_full.zip
 unzip dataset_1230.zip
 unzip OK_Images_496.zip
+unzip dataset_test_NG.zip
 
-mv dataset_test_OK/images/test/ ./dataset_1230/images/
-mv dataset_test_OK/labels/test/ ./dataset_1230/labels/
+mv dataset_test_OK/images/test/* dataset_1230/images/test/
 
-mv dataset_test_NG/images/test/* ./dataset_1230/images/test/
-mv dataset_test_NG/labels/test/* ./dataset_1230/labels/test/
+mv dataset_test_NG/images/test/* dataset_1230/images/test/
+mv dataset_test_NG/labels/test/* dataset_1230/labels/test/
 
 mv 496/* ./dataset_1230/images/train/
 
