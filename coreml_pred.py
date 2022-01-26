@@ -16,7 +16,6 @@ MODE = 'debug'
 SAVE_IMG = False
 VIEW_IMG = False
 SAVE_TXT = True
-# CAT_NAMES = ['Screw', 'unknown']
 CAT_NAMES = ['Screw']
 
 # Anchor box can be checked in pytorch model
@@ -56,12 +55,12 @@ anchor_grid = [torch.zeros(1)] * nl
 
 
 if MODE == 'debug':
-    COREML_MODEL = ['/Users/zhenyu/Downloads/station1_0107.mlmodel',
+    COREML_MODEL = ['/Users/zhenyu/Downloads/station1_0114.mlmodel',
                     # '/Users/zhenyu/Desktop/runs/train/exp2/weights/best.mlmodel',
                     # '/Users/zhenyu/Desktop/runs/train/exp3/weights/best.mlmodel'
                     ]
     # IMAGE_FOLDER = "/Users/zhenyu/Library/CloudStorage/Box-Box/MLProject:IphoneAOI/datasets/After T-Cowling/NG/"
-    IMAGE_FOLDER = '/Users/zhenyu/Desktop/dataset_0111/images/test/'
+    IMAGE_FOLDER = '/Users/zhenyu/Desktop/dataset_test/images/test/'
     # IMAGE_FOLDER = '/Users/zhenyu/Library/CloudStorage/Box-Box/MLProject:IphoneAOI/datasets/After T-Cowling/NG_Image/FOV4_Roy/'
     OUT_FOLDER = "/Users/zhenyu/Desktop/pred/"
     # OUT_FOLDER = '/Users/zhenyu/Library/CloudStorage/Box-Box/MLProject:IphoneAOI/datasets/After T-Cowling/Overkill/Results_289/FOV4_31_conf'
