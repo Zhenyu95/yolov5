@@ -1,23 +1,23 @@
 # unzip and move files
 mv /Users/zhenyu/Desktop/dataset_1230.zip /root/
-mv ./dataset_test_OK.z01 /root/
-mv ./dataset_test_OK.z02 /root/
-mv ./dataset_test_OK.z03 /root/
-mv ./dataset_test_OK.zip /root/
-mv ./OK_Images_496.zip /root/
+mv /dataset_test_OK.z01 /root/
+mv /dataset_test_OK.z02 /root/
+mv /dataset_test_OK.z03 /root/
+mv /dataset_test_OK.zip /root/
+mv /OK_Images_496.zip /root/
 cd ..
 zip -s- dataset_test_OK.* -O dataset_test_OK_all.zip
 unzip dataset_test_OK_all.zip
 unzip dataset_1230.zip
 unzip OK_Images_496.zip
 
-mv ./dataset_test_OK/images/test/ ./dataset_1230/images/
-mv ./dataset_test_OK/labels/test/ ./dataset_1230/labels/
+mv dataset_test_OK/images/test/ ./dataset_1230/images/
+mv dataset_test_OK/labels/test/ ./dataset_1230/labels/
 
-mv ./dataset_test_NG/images/test/* ./dataset_1230/images/test/
-mv ./dataset_test_NG/labels/test/* ./dataset_1230/labels/test/
+mv dataset_test_NG/images/test/* ./dataset_1230/images/test/
+mv dataset_test_NG/labels/test/* ./dataset_1230/labels/test/
 
-mv ./496/* ./dataset_1230/images/train/
+mv 496/* ./dataset_1230/images/train/
 
 cd yolov5
 # python3 train.py --epochs 100 --data iphoneaoi.yaml --batch 32 --weights yolov5x.pt --img 1920 --cache --evolve 1000
