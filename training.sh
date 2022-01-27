@@ -14,14 +14,17 @@ unzip dataset_1230.zip
 unzip OK_Images_496.zip
 unzip dataset_test_NG.zip
 
+rm dataset_1230/images/test/*
+rm dataset_1230/labels/test/*
+
+python3 /root/yolov5/random_move.py
+
 mv dataset_test_OK/images/test/* dataset_1230/images/test/
 
 mv dataset_test_NG/images/test/* dataset_1230/images/test/
 mv dataset_test_NG/labels/test/* dataset_1230/labels/test/
 
 mv 496/* ./dataset_1230/images/train/
-
-python3 /root/yolov5/random_move.py
 
 cd yolov5
 # python3 train.py --epochs 100 --data iphoneaoi.yaml --batch 32 --weights yolov5x.pt --img 1920 --cache --evolve 1000
