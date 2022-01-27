@@ -17,7 +17,7 @@ unzip dataset_test_NG.zip
 rm dataset_1230/images/test/*
 rm dataset_1230/labels/test/*
 
-python3 /root/yolov5/random_move.py
+# python3 /root/yolov5/random_move.py
 
 mv dataset_test_OK/images/test/* dataset_1230/images/test/
 
