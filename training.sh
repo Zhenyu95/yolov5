@@ -1,13 +1,30 @@
 # unzip and move files
-mv /dataset.z01 /root/
-mv /dataset.z02 /root/
-mv /dataset.z03 /root/
-mv /dataset.z04 /root/
-mv /dataset.zip /root/
+mv /Users/zhenyu/Desktop/dataset_1230.zip /root/
+mv /dataset_test_OK.z01 /root/
+mv /dataset_test_OK.z02 /root/
+mv /dataset_test_OK.z03 /root/
+mv /dataset_test_OK.zip /root/
+mv /OK_Images_496.zip /root/
+mv /dataset_test_NG.zip /root/
 
 cd ..
-zip -FF dataset.zip --out dataset_full.zip
-unzip dataset_full.zip
+zip -FF dataset_test_OK.zip --out dataset_test_OK_full.zip
+unzip dataset_test_OK_full.zip
+unzip dataset_1230.zip
+unzip OK_Images_496.zip
+unzip dataset_test_NG.zip
+
+rm dataset_1230/images/test/*
+rm dataset_1230/labels/test/*
+
+python3 /root/yolov5/random_move.py
+
+mv dataset_test_OK/images/test/* dataset_1230/images/test/
+
+mv dataset_test_NG/images/test/* dataset_1230/images/test/
+mv dataset_test_NG/labels/test/* dataset_1230/labels/test/
+
+mv 496/* ./dataset_1230/images/train/
 
 cd yolov5
 # python3 train.py --epochs 100 --data iphoneaoi.yaml --batch 32 --weights yolov5x.pt --img 1920 --cache --evolve 1000
