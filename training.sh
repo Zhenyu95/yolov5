@@ -1,30 +1,37 @@
 # unzip and move files
-mv /Users/zhenyu/Desktop/dataset_1230.zip /root/
-mv /dataset_test_OK.z01 /root/
-mv /dataset_test_OK.z02 /root/
-mv /dataset_test_OK.z03 /root/
-mv /dataset_test_OK.zip /root/
-mv /OK_Images_496.zip /root/
-mv /dataset_test_NG.zip /root/
+mv /Sythesized.z01 /root/
+mv /Sythesized.z02 /root/
+mv /Sythesized.zip /root/
+mv /OK.zip /root/
+mv /Real.zip /root/
 
-cd ..
-zip -FF dataset_test_OK.zip --out dataset_test_OK_full.zip
-unzip dataset_test_OK_full.zip
-unzip dataset_1230.zip
-unzip OK_Images_496.zip
-unzip dataset_test_NG.zip
+cd /root
+zip -FF Sythesized.zip --out Sythesized_full.zip
+unzip Sythesized_full.zip
+unzip OK.zip
+unzip Real.zip
 
-rm dataset_1230/images/test/*
-rm dataset_1230/labels/test/*
+mv /root/OK/FOV1/* /root/OK/
+mv /root/OK/FOV2/* /root/OK/
+mv /root/OK/FOV3/* /root/OK/
+mv /root/OK/FOV4/* /root/OK/
+rm -r /root/OK/FOV1/
+rm -r /root/OK/FOV2/
+rm -r /root/OK/FOV3/
+rm -r /root/OK/FOV4/
+
+rm /root/Sythesized/labels/classes.txt
+mv /root/Real/labels/classes.txt /root/dataset/labels
+
+mkdir /root/dataset/
+mkdir /root/dataset/images/
+mkdir /root/dataset/labels/
+mkdir /root/dataset/images/train/
+mkdir /root/dataset/images/test/
+mkdir /root/dataset/labels/train/
+mkdir /root/dataset/labels/test/
 
 python3 /root/yolov5/random_move.py
-
-mv dataset_test_OK/images/test/* dataset_1230/images/test/
-
-mv dataset_test_NG/images/test/* dataset_1230/images/test/
-mv dataset_test_NG/labels/test/* dataset_1230/labels/test/
-
-mv 496/* ./dataset_1230/images/train/
 
 cd yolov5
 # python3 train.py --epochs 1000 --data iphoneaoi.yaml --batch 16 --weights yolov5x.pt --img 1920 --cache --evolve 1000 --rect --adam
