@@ -4,7 +4,7 @@ import os
 from tqdm import tqdm
 
 random.seed(9)
-syn_path = '/root/Sythesized/'
+syn_path = '/root/Synthesized/'
 ok_path = '/root/OK/'
 real_path = '/root/Real/'
 dst = '/root/dataset/'

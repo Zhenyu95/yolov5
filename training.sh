@@ -1,13 +1,13 @@
 # unzip and move files
-mv /Sythesized.z01 /root/
-mv /Sythesized.z02 /root/
-mv /Sythesized.zip /root/
+mv /Synthesized.z01 /root/
+mv /Synthesized.z02 /root/
+mv /Synthesized.zip /root/
 mv /OK.zip /root/
 mv /Real.zip /root/
 
 cd /root
-zip -FF Sythesized.zip --out Sythesized_full.zip
-unzip Sythesized_full.zip
+zip -FF Synthesized.zip --out Synthesized_full.zip
+unzip Synthesized_full.zip
 unzip OK.zip
 unzip Real.zip
 
@@ -20,7 +20,7 @@ rm -r /root/OK/FOV2/
 rm -r /root/OK/FOV3/
 rm -r /root/OK/FOV4/
 
-rm /root/Sythesized/labels/classes.txt
+rm /root/Synthesized/labels/classes.txt
 mv /root/Real/labels/classes.txt /root/dataset/labels
 
 mkdir /root/dataset/
