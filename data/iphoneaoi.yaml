@@ -2,7 +2,7 @@
 path: /root/dataset  # dataset root dir
 train: images/train  # train images (relative to 'path')
 val: images/test  # val images (relative to 'path')
-test:  images/test # test images (optional)
+test: images/test # test images (optional)
 
 # Classes
 nc: 1  # number of classes
