@@ -44,7 +44,7 @@ python3 /root/yolov5/random_move.py
 cd yolov5
 # python3 train.py --epochs 1000 --data iphoneaoi.yaml --batch 16 --weights yolov5x.pt --img 1920 --cache --evolve 1000 --rect --adam
 # python3 -m torch.distributed.launch --nproc_per_node 8 train.py --batch 128 --data iphoneaoi.yaml --weights yolov5s.pt --device 0,1,2,3,4,5,6,7 --epochs 600 --img 1920 --adam --cache
-python3 -m torch.distributed.launch --nproc_per_node 4 train.py --batch 24 --data iphoneaoi.yaml --weights yolov5x.pt --device 0,1,2,3 --epochs 600 --img 1280 --adam --cache
+python3 -m torch.distributed.launch --nproc_per_node 8 train.py --batch 24 --data iphoneaoi.yaml --weights yolov5x.pt --device 0,1,2,3,4,5,6,7 --epochs 600 --img 1280 --adam --cache
 # python3 -m torch.distributed.launch --nproc_per_node 8 train.py --batch 128 --data iphoneaoi.yaml --cfg models/hub/yolov5s-transformer.yaml --device 0,1,2,3,4,5,6,7 --epochs 600 --img 1920 --rect --adam --cache
 # python3 -m torch.distributed.launch --nproc_per_node 8 train.py --batch 32 --data iphoneaoi.yaml --cfg models/hub/yolov5x-transformer.yaml --device 0,1,2,3,4,5,6,7 --epochs 600 --img 1920 --rect --adam --cache
 # for i in 0 1 2 3 4 5 6 7; do
