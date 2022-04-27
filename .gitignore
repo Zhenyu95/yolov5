@@ -37,6 +37,8 @@ results*.csv
 coco/
 coco128/
 VOC/
+Template_Station1/
+Template_Station2/
 
 # MATLAB GitIgnore -----------------------------------------------------------------------------------------------------
 *.m~

@@ -1,10 +1,10 @@
 # unzip and move files
-# mv /Synthesized.z01 /root/
-# mv /Synthesized.z02 /root/
-# mv /Synthesized.zip /root/
-mv /Sythesized.z01 /root/Synthesized.z01
-mv /Sythesized.z02 /root/Synthesized.z02
-mv /Sythesized.zip /root/Synthesized.zip
+mv /Synthesized.z01 /root/
+mv /Synthesized.z02 /root/
+mv /Synthesized.zip /root/
+# mv /Sythesized.z01 /root/Synthesized.z01
+# mv /Sythesized.z02 /root/Synthesized.z02
+# mv /Sythesized.zip /root/Synthesized.zip
 mv /OK.zip /root/
 mv /Real.zip /root/
 
@@ -26,6 +26,11 @@ rm -r /root/OK/FOV4/
 rm /root/Synthesized/labels/classes.txt
 mv /root/Real/labels/classes.txt /root/dataset/labels
 
+# Station2 revised label
+mv /labels.zip /root/
+unzip labels.zip
+mv /root/labels/* /root/Real/labels/
+
 mkdir /root/dataset/
 mkdir /root/dataset/images/
 mkdir /root/dataset/labels/
@@ -39,12 +44,12 @@ python3 /root/yolov5/random_move.py
 cd yolov5
 # python3 train.py --epochs 1000 --data iphoneaoi.yaml --batch 16 --weights yolov5x.pt --img 1920 --cache --evolve 1000 --rect --adam
 # python3 -m torch.distributed.launch --nproc_per_node 8 train.py --batch 128 --data iphoneaoi.yaml --weights yolov5s.pt --device 0,1,2,3,4,5,6,7 --epochs 600 --img 1920 --adam --cache
-python3 -m torch.distributed.launch --nproc_per_node 8 train.py --batch 24 --data iphoneaoi.yaml --weights yolov5x.pt --device 0,1,2,3,4,5,6,7 --epochs 300 --img 1280 --cache
+python3 -m torch.distributed.launch --nproc_per_node 8 train.py --batch 16 --data iphoneaoi.yaml --weights yolov5x.pt --device 0,1,2,3,4,5,6,7 --epochs 300 --img 1280 --cache
 # python3 -m torch.distributed.launch --nproc_per_node 8 train.py --batch 128 --data iphoneaoi.yaml --cfg models/hub/yolov5s-transformer.yaml --device 0,1,2,3,4,5,6,7 --epochs 600 --img 1920 --rect --adam --cache
 # python3 -m torch.distributed.launch --nproc_per_node 8 train.py --batch 32 --data iphoneaoi.yaml --cfg models/hub/yolov5x-transformer.yaml --device 0,1,2,3,4,5,6,7 --epochs 600 --img 1920 --rect --adam --cache
 # for i in 0 1 2 3 4 5 6 7; do
 #   nohup python3 train.py --epochs 50 --data iphoneaoi.yaml --weights yolov5x.pt --cache --evolve 500 --batch 32 --img 1920 --rect --device $i > evolve_gpu_$i.log &
 # done
-python3 export.py --data data/iphoneaoi.yaml --weights runs/train/exp/weights/best.pt --img 1920 1440 --include coreml
+python3 export.py --data data/iphoneaoi.yaml --weights runs/train/exp/weights/best.pt --img 1280 960 --include coreml
 # python3 export.py --data data/iphoneaoi.yaml --weights runs/train/exp2/weights/best.pt --img 1920 1440 --include coreml
 # zip -r runs.zip runs/
