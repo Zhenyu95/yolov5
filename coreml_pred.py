@@ -13,9 +13,9 @@ from pred_utils import *
 """ Global variables : Path variables are defined below """
 
 # COREML_MODEL is a list containing all coreml model path
-COREML_MODEL = ['/model_path/best.mlmodel']
-IMAGE_FOLDER = '/AOI9/'
-TEMPLATE_PATH = '/AOI9/Template'
+COREML_MODEL = ['/Users/zhenyu/Downloads/export(1).mlmodel']
+IMAGE_FOLDER = '/Users/zhenyu/Desktop/AOI7'
+TEMPLATE_PATH = '/Users/zhenyu/Desktop/AOI7/Template'
 
 # folder structure should follow the below if evaluate()
 # - folder
@@ -28,7 +28,7 @@ TEMPLATE_PATH = '/AOI9/Template'
 """ Global variables : Image size are defined below """
 
 # target size of input image (width, height)
-IMG_SIZE = (960, 1280)
+IMG_SIZE = (1280, 1280)
 RAW_IMG_SIZE = (3024, 4032)
 
 
@@ -178,7 +178,7 @@ def predict(img_path, model_list, image_folder, template, source,
     for model in model_list:
         pred = torch.cat((pred, detect(image, model, source)), 1)
 
-    nms = non_max_suppression(pred, conf_thresh, .45, classes=None, agnostic=False)[0]
+    nms = non_max_suppression(pred, conf_thresh, iou_thresh, classes=None, agnostic=False)[0]
     label_list = []
     for *xyxy, conf, cls in nms:
         # if MODEL_SOURCE == 'tf', remove black area
@@ -192,10 +192,11 @@ def predict(img_path, model_list, image_folder, template, source,
                               w=IMG_SIZE[0] * image.size[0] / image.size[1], 
                               h=IMG_SIZE[1]
                               ).view(-1).tolist()
-        xywh = xyxy2xywhn(torch.tensor(xyxy).view(1, 4), 
-                          w=IMG_SIZE[0], 
-                          h=IMG_SIZE[1]
-                          ).view(-1).tolist()
+        else:
+            xywh = xyxy2xywhn(torch.tensor(xyxy).view(1, 4), 
+                            w=IMG_SIZE[0], 
+                            h=IMG_SIZE[1]
+                            ).view(-1).tolist()
         # smallerThanAreaThresh: 
         # True -> bounding box larger than area_thresh
         smallerThanAreaThresh = (xywh[2] * xywh[3] * 4032 * 3024 > area_thresh) 
@@ -283,14 +284,14 @@ def evaluate(image_folder=IMAGE_FOLDER, template_path=TEMPLATE_PATH, model_path_
                 predict(img_path, model_list, img_folder, template, model_source, save_img=False)
         return visual_analysis(img_folder, label_folder, pred_folder, out_folder)
     
-    df_fit = eval(fit_folder)
-    # df_ok = eval(ok_folder)
+    # df_fit = eval(fit_folder)
+    df_ok = eval(ok_folder)
     
-    post_analysis(df_fit, 'FIT')
-    cropOverkillEscape(df_fit, os.path.join(fit_folder, 'eval_output', 'images'))
+    # post_analysis(df_fit, 'FIT')
+    # cropOverkillEscape(df_fit, os.path.join(fit_folder, 'eval_output', 'images'))
     
-    # post_analysis(df_ok, 'OK')
-    # cropOverkillEscape(df_ok, os.path.join(ok_folder, 'eval_output', 'images'))
+    post_analysis(df_ok, 'OK')
+    cropOverkillEscape(df_ok, os.path.join(ok_folder, 'eval_output', 'images'))
 
 
 

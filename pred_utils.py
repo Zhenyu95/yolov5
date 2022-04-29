@@ -31,7 +31,7 @@ def load_model(model_path_list):
         model_list.append(model)
         print('Model {} loaded'.format(each))
         model_source.append(str(model.input_description))
-    
+
     model_source = set(model_source)
     if len(model_source) != 1:
         raise Exception('Model type does not match')
@@ -40,7 +40,7 @@ def load_model(model_path_list):
             return model_list, 'torch'
         else:
             return model_list, 'tf'
-        
+
 
 # helper function to decode the model output
 def make_grid(nx, ny, i, a, stride, na):
@@ -397,14 +397,17 @@ def visual_analysis(img_folder, label_folder, pred_folder, out_folder):
         img = PIL.Image.open(os.path.join(img_folder, image))
         draw = PIL.ImageDraw.Draw(img)
         for index_label, value in enumerate(label):
-            iou = (iou_calc(value, pred) > 0.01).nonzero()[0]
-            # for each in index_pred:
-            #     label_TP.append(pred[each])
-            #     break
+            try:
+                iou = (iou_calc(value, pred) > 0.01).nonzero()[0]
+            except IndexError:
+                continue
             if np.size(iou):
                 index_label_list.append(index_label)
         for index_pred, value in enumerate(pred):
-            iou = (iou_calc(value, label) > 0.01).nonzero()[0]
+            try:
+                iou = (iou_calc(value, label) > 0.01).nonzero()[0]
+            except IndexError:
+                continue
             if np.size(iou):
                 index_pred_list.append(index_pred)
         label_TP = pred[list(set(index_pred_list))]
@@ -424,7 +427,7 @@ def visual_analysis(img_folder, label_folder, pred_folder, out_folder):
                   'TP': len(label_TP),
                   'Overkills': np.array2string(pred, separator=','),
                   'Escapes': np.array2string(label, separator=',')}
-        df_result = df_result.append(result, ignore_index=True)
+        df_result = pd.concat([df_result, pd.DataFrame.from_records([result])])
 
     df_result.FOV = df_result.apply(lambda row: getFOVFromName(row.image), axis=1)
     df_result.EscapeOrNot = df_result.apply(lambda row: row.TP != row.Label, axis=1)
@@ -449,9 +452,9 @@ def imgPredLabelMatch(img_folder, label_folder, pred_folder):
         pred_list = [pred[:-4] for pred in os.listdir(pred_folder) if pred.endswith('.txt')]
     except FileNotFoundError:
         pred_list = []
-        
+
     check = [f'{item}.jpg' for item in label_list if (item not in pred_list) and (item != 'classes')]
-    
+
     if (not label_list) and (not pred_list):
         check = [img for img in os.listdir(img_folder) if img.endswith('.jpg')]
 
@@ -460,7 +463,7 @@ def imgPredLabelMatch(img_folder, label_folder, pred_folder):
 
 def string2nparray(string):
     decode = re.split(r'\]|\[', string)
-    decode = list(filter(lambda x: len(x)>10, decode))
+    decode = list(filter(lambda x: len(x) > 10, decode))
     array = np.array([list(map(float, line.rstrip().split(','))) for line in decode])
     return array
 
@@ -482,31 +485,30 @@ def post_analysis(df, text=''):
         screw_recall = n_TP / n_label
     except:
         screw_recall = 0
-    
-    image_escape_rate = df.EscapeOrNot.sum()/df.EscapeOrNot.count()
-    image_overkill_rate = df.OverkillOrNot.sum()/df.OverkillOrNot.count()
-    
-    print('*'*88)
+
+    image_escape_rate = df.EscapeOrNot.sum() / df.EscapeOrNot.count()
+    image_overkill_rate = df.OverkillOrNot.sum() / df.OverkillOrNot.count()
+
+    print('*' * 88)
     print('Here is the evaluation result of {} images: \n'.format(text))
-    print('-'*38+'Screw Level'+'-'*39)
+    print('-' * 38 + 'Screw Level' + '-' * 39)
     print('Screw Level Precision     : {:%}'.format(screw_precision))
     print('Screw Level Capture Rate  : {:%}'.format(screw_recall))
-    print('Screw Level Escape Rate   : {:%}'.format(1-screw_recall))
-    print('-'*38+'Screw Level'+'-'*39)
-    print('Image Level Capture Rate  : {:%}'.format(1-image_escape_rate))
+    print('Screw Level Escape Rate   : {:%}'.format(1 - screw_recall))
+    print('-' * 38 + 'Image Level' + '-' * 39)
+    print('Image Level Capture Rate  : {:%}'.format(1 - image_escape_rate))
     print('Image Level Escape Rate   : {:%}'.format(image_escape_rate))
     print('Image Level Overkill Rate : {:%}'.format(image_overkill_rate))
-    print('*'*88)
-    
-    
+    print('*' * 88)
+
+
 def cropOverkillEscape(df, image_folder):
-    
+
     df.Overkills = df.Overkills.apply(lambda col: string2nparray(col))
     df.Escapes = df.Escapes.apply(lambda col: string2nparray(col))
     df['escapesCord'] = df.Escapes.apply(lambda col: array2cord(col))
     df['overkillCord'] = df.Overkills.apply(lambda col: array2cord(col))
-    
-    
+
     def crop(image_name, xy, image_folder, out_folder):
         image = PIL.Image.open(os.path.join(image_folder, image_name))
         xy = xy * [image.width, image.height]
@@ -514,9 +516,8 @@ def cropOverkillEscape(df, image_folder):
         xyxy = xyxy + [-256, -256, 256, 256]
         for index, cord in enumerate(xyxy):
             cropped = image.crop(cord)
-            cropped.save(os.path.join(out_folder,'{}_{}.jpg'.format(image_name[:-4], index)))
-            
-            
+            cropped.save(os.path.join(out_folder, '{}_{}.jpg'.format(image_name[:-4], index)))
+
     for _, row in tqdm(df.iterrows(), total=df.shape[0]):
         if np.array(row.escapesCord).any():
             out_folder = os.path.join(image_folder, '../escape_crop')
@@ -526,5 +527,3 @@ def cropOverkillEscape(df, image_folder):
             out_folder = os.path.join(image_folder, '../overkill_crop')
             os.makedirs(out_folder, exist_ok=True)
             crop(row.image, row.overkillCord, image_folder, out_folder)
-            
-
