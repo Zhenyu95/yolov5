@@ -1,5 +1,6 @@
 from ast import Raise
 from distutils.log import error
+from sklearn.utils import resample
 import torch
 import PIL.Image
 import PIL.ImageDraw
@@ -51,12 +52,27 @@ def make_grid(nx, ny, i, a, stride, na):
 
 
 # resize the image to target size
-def resize_image(source_image, img_size):
-    background = PIL.Image.new('RGB', img_size, "black")
-    source_image.thumbnail(img_size)
-    (w, h) = source_image.size
-    background.paste(source_image, (int((img_size[0] - w) / 2), int((img_size[1] - h) / 2)))
-    return background
+def resize_image(source_image, img_size, source):
+    img = source_image.copy()
+    if source == 'tf':
+        ori_height = img.size[1]
+        ori_width = img.size[0]
+        size = img_size[0]
+
+        img = np.array(img)
+        img = cv2.resize(img, (int(size*ori_width/ori_height), size), interpolation=cv2.INTER_LINEAR)
+
+        top, bottom = 0, 0
+        left, right = int((size-size*ori_width/ori_height)/2), int((size-size*ori_width/ori_height)/2)
+        img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=[0,0,0])
+        img = img[None]
+        img = img/255.0
+    else:
+        img = np.array(img)
+        img = cv2.resize(img, img_size, interpolation=cv2.INTER_LINEAR)
+        img = PIL.Image.fromarray(img)
+    return img
+
 
 
 def mean(x):
@@ -207,7 +223,7 @@ def GetROILine(image, idx, tsep, idxs, xy, theta_s):
     bt1 = P1[1] - kt1 * P1[0]
     bt2 = P1[1] / kt2 - P1[0]
 
-    return kt1, kt2, bt1, bt2, img0
+    return kt1, kt2, bt1, bt2, img0, P1
 
 
 # convert pytorch tensor to PIL image
@@ -527,3 +543,24 @@ def cropOverkillEscape(df, image_folder):
             out_folder = os.path.join(image_folder, '../overkill_crop')
             os.makedirs(out_folder, exist_ok=True)
             crop(row.image, row.overkillCord, image_folder, out_folder)
+            
+def checkrubber(nms, image, idx, P):
+
+    if (idx ==0) or (idx ==1):
+        rubberthres = 100
+
+        x3 = [-1363, 1364]
+        y3 = [-1110, -1120]
+
+        P3 = (P[0]+x3[idx], P[1]+y3[idx])
+        bbox = ( P3[0]-30, P3[1]-30, P3[0]+30, P3[1]+30)
+        cropimg = image.crop(bbox)
+        stat = PIL.ImageStat.Stat(cropimg)
+        grayscale = stat.mean[0]
+
+        if grayscale > rubberthres:
+            arr = [[500, 500, 600, 600, 0.98, 1]]
+            nms2 = torch.tensor(arr)
+            nms = torch.cat((nms, nms2), dim = 0)
+
+    return nms

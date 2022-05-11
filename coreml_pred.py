@@ -9,11 +9,12 @@ from tqdm import tqdm
 import math
 from torchvision import transforms
 from pred_utils import *
+import cv2
 
 """ Global variables : Path variables are defined below """
 
 # COREML_MODEL is a list containing all coreml model path
-COREML_MODEL = ['/Users/zhenyu/Downloads/export(1).mlmodel']
+COREML_MODEL = ['/Users/zhenyu/Downloads/export.mlmodel']
 IMAGE_FOLDER = '/Users/zhenyu/Desktop/AOI7'
 TEMPLATE_PATH = '/Users/zhenyu/Desktop/AOI7/Template'
 
@@ -28,7 +29,7 @@ TEMPLATE_PATH = '/Users/zhenyu/Desktop/AOI7/Template'
 """ Global variables : Image size are defined below """
 
 # target size of input image (width, height)
-IMG_SIZE = (1280, 1280)
+IMG_SIZE = (960, 1280)
 RAW_IMG_SIZE = (3024, 4032)
 
 
@@ -81,6 +82,9 @@ SAVE_TXT = True
 SAVE_CONF = True
 # names of each category
 CAT_NAMES = ['Screw']
+# check rubber
+rubbercheck=True
+
 
 
 """ Global variables : below variables should be kept as it is """
@@ -101,17 +105,7 @@ def detect(image, model, source, stride=STRIDE, na=na):
     # if model is converted from BJML team's tensorflow model, 
     # predict the result via the following code
     if source == 'tf':
-        img = image.copy()
-        ori_height = img.size[1]
-        ori_width = img.size[0]
-        size = IMG_SIZE[0]
-
-        trans = transforms.Compose([transforms.Resize((size, int(size * ori_width / ori_height)), interpolation=1),
-                                    transforms.Pad((int((size - size * ori_width / ori_height) / 2), 0)), ])
-
-        img = np.array(trans(img))
-        img = img[None]
-        img = img / 255.0
+        img = resize_image(image, IMG_SIZE, source)
 
         prediction_result = model.predict({"input_1": img})
         prediction_boxes = torch.Tensor(prediction_result["Identity"])
@@ -126,9 +120,9 @@ def detect(image, model, source, stride=STRIDE, na=na):
     # if mode is converted from pytorch YOLOv5,
     # predict the result via the following code
     else:
-        resized = resize_image(image.copy(), IMG_SIZE)
+        img = resize_image(image, IMG_SIZE, source)
 
-        predictions = model.predict({'image': resized})
+        predictions = model.predict({'image': img})
 
         z = []  # inference output
         x = []
@@ -172,13 +166,17 @@ def predict(img_path, model_list, image_folder, template, source,
     flag = [1, 1, -1, -1]
 
     # get ROI line separator
-    kt1, kt2, bt1, bt2, img0 = GetROILine(image, idx, tsep, idxs, xy, theta_s)
+    kt1, kt2, bt1, bt2, img0, P1 = GetROILine(image, idx, tsep, idxs, xy, theta_s)
 
     pred = torch.tensor([])
     for model in model_list:
         pred = torch.cat((pred, detect(image, model, source)), 1)
 
-    nms = non_max_suppression(pred, conf_thresh, iou_thresh, classes=None, agnostic=False)[0]
+    nms = non_max_suppression(pred, conf_thresh, .45, classes=None, agnostic=False)[0]
+    
+    if rubbercheck:
+        nms = checkrubber(nms, image, idx, P1)
+
     label_list = []
     for *xyxy, conf, cls in nms:
         # if MODEL_SOURCE == 'tf', remove black area
@@ -186,17 +184,15 @@ def predict(img_path, model_list, image_folder, template, source,
             xyxy[0] = xyxy[0] - (IMG_SIZE[0] - IMG_SIZE[0] * image.size[0] / image.size[1]) / 2
             xyxy[2] = xyxy[2] - (IMG_SIZE[0] - IMG_SIZE[0] * image.size[0] / image.size[1]) / 2
  
-#  TODO is this redundant
- 
             xywh = xyxy2xywhn(torch.tensor(xyxy).view(1, 4), 
                               w=IMG_SIZE[0] * image.size[0] / image.size[1], 
                               h=IMG_SIZE[1]
                               ).view(-1).tolist()
         else:
             xywh = xyxy2xywhn(torch.tensor(xyxy).view(1, 4), 
-                            w=IMG_SIZE[0], 
-                            h=IMG_SIZE[1]
-                            ).view(-1).tolist()
+                              w=IMG_SIZE[0],
+                              h=IMG_SIZE[1]
+                              ).view(-1).tolist()
         # smallerThanAreaThresh: 
         # True -> bounding box larger than area_thresh
         smallerThanAreaThresh = (xywh[2] * xywh[3] * 4032 * 3024 > area_thresh) 
@@ -223,8 +219,12 @@ def predict(img_path, model_list, image_folder, template, source,
                     label_txt = f'{conf:.2f}'
                 else:
                     label_txt = ''
-                label = [cls, *xywh, conf]
-                draw = draw_bb(draw, [label], color=color, text=label_txt)
+                if cls == 1:
+                    shape = [(0,0), (3024,4032)]
+                    draw.rectangle(shape, outline=(255,255,0), width=50)
+                else:
+                    label = [cls, *xywh, conf]
+                    draw = draw_bb(draw, [label], color=color, text=label_txt)
 
     os.makedirs(out_folder, exist_ok=True)
     if save_text & (len(label_list) != 0):
@@ -284,14 +284,14 @@ def evaluate(image_folder=IMAGE_FOLDER, template_path=TEMPLATE_PATH, model_path_
                 predict(img_path, model_list, img_folder, template, model_source, save_img=False)
         return visual_analysis(img_folder, label_folder, pred_folder, out_folder)
     
-    # df_fit = eval(fit_folder)
-    df_ok = eval(ok_folder)
+    df_fit = eval(fit_folder)
+    # df_ok = eval(ok_folder)
     
-    # post_analysis(df_fit, 'FIT')
-    # cropOverkillEscape(df_fit, os.path.join(fit_folder, 'eval_output', 'images'))
+    post_analysis(df_fit, 'FIT')
+    cropOverkillEscape(df_fit, os.path.join(fit_folder, 'eval_output', 'images'))
     
-    post_analysis(df_ok, 'OK')
-    cropOverkillEscape(df_ok, os.path.join(ok_folder, 'eval_output', 'images'))
+    # post_analysis(df_ok, 'OK')
+    # cropOverkillEscape(df_ok, os.path.join(ok_folder, 'eval_output', 'images'))
 
 
 
