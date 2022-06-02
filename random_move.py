@@ -59,6 +59,6 @@ def move(path, dst, n_train):
     print('-' * 50 + str(path) +'moved' + '-' * 50)
     
     
-move_OK(ok_path, dst, 800)
-move(real_path, dst, 200)
-move(syn_path, dst, 4800)
+move_OK(ok_path, dst, 3200)
+move(real_path, dst, 300)
+move(syn_path, dst, 28000)
