@@ -60,4 +60,5 @@ python3 -m torch.distributed.launch --nproc_per_node 8 train.py --batch 32 --dat
 # done
 python3 export.py --data data/iphoneaoi.yaml --weights runs/train/exp/weights/best.pt --img 1280 960 --include coreml
 # python3 export.py --data data/iphoneaoi.yaml --weights runs/train/exp2/weights/best.pt --img 1920 1440 --include coreml
-# zip -r runs.zip runs/
+
+mv /root/yolov5/real_test.csv /root/yolov5/runs/train/exp/
