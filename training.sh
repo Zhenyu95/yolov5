@@ -30,7 +30,7 @@ rm -r /root/OK/FOV4/
 
 # move classes.txt to training labels path
 # rm /root/Synthesized/labels/classes.txt
-mv /root/Real/labels/classes.txt /root/dataset/labels
+mv /root/Real/labels/classes.txt /root/dataset/labels/train/
 
 # move revised label to update Real labels
 # mv /labels.zip /root/

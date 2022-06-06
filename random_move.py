@@ -2,6 +2,7 @@ import random
 import shutil
 import os
 from tqdm import tqdm
+import pandas as pd
 
 random.seed(9)
 syn_path = '/root/Synthesized/'
@@ -72,7 +73,11 @@ def move(path, dst, n_train, n_val='all'):
             
     print('-' * 50 + str(path) +'moved' + '-' * 50)
     
+    df = pd.DataFrame(test_img_list)
+    df.to_csv('real_test.csv')
+    
+    
     
 move_OK(ok_path, dst, 3000, n_val=300)
-move(real_path, dst, 250)
+move(real_path, dst, 200)
 move(syn_path, dst, 5000, n_val=200)
