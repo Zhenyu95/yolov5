@@ -74,7 +74,7 @@ def move(path, dst, n_train, n_val='all'):
     print('-' * 50 + str(path) +'moved' + '-' * 50)
     
     df = pd.DataFrame(test_img_list)
-    df.to_csv('real_test.csv')
+    df.to_csv('/root/yolov5/real_test.csv')
     
     
     
