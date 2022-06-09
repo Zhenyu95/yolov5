@@ -1,32 +1,33 @@
 # move zip files to /root
 mv /Synthesized.z01 /root/
-mv /Synthesized.z02 /root/
-mv /Synthesized.z03 /root/
-mv /Synthesized.z04 /root/
-mv /Synthesized.z05 /root/
-mv /Synthesized.z06 /root/
+# mv /Synthesized.z02 /root/
+# mv /Synthesized.z03 /root/
+# mv /Synthesized.z04 /root/
+# mv /Synthesized.z05 /root/
+# mv /Synthesized.z06 /root/
 mv /Synthesized.zip /root/
-mv /OK.z01 /root/
+# mv /OK.z01 /root/
 mv /OK.zip /root/
 mv /Real.zip /root/
 
 # unzip zip files
 cd /root
 zip -FF Synthesized.zip --out Synthesized_full.zip
-zip -FF OK.zip --out OK_full.zip
+# zip -FF OK.zip --out OK_full.zip
 unzip Synthesized_full.zip
-unzip OK_full.zip
+# unzip OK_full.zip
+unzip OK.zip
 unzip Real.zip
 
 # move FOV1-4 images together
-mv /root/OK/FOV1/* /root/OK/
-mv /root/OK/FOV2/* /root/OK/
-mv /root/OK/FOV3/* /root/OK/
-mv /root/OK/FOV4/* /root/OK/
-rm -r /root/OK/FOV1/
-rm -r /root/OK/FOV2/
-rm -r /root/OK/FOV3/
-rm -r /root/OK/FOV4/
+# mv /root/OK/FOV1/* /root/OK/
+# mv /root/OK/FOV2/* /root/OK/
+# mv /root/OK/FOV3/* /root/OK/
+# mv /root/OK/FOV4/* /root/OK/
+# rm -r /root/OK/FOV1/
+# rm -r /root/OK/FOV2/
+# rm -r /root/OK/FOV3/
+# rm -r /root/OK/FOV4/
 
 # move classes.txt to training labels path
 # rm /root/Synthesized/labels/classes.txt

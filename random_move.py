@@ -6,7 +6,7 @@ import pandas as pd
 
 random.seed(9)
 syn_path = '/root/Synthesized/'
-ok_path = '/root/OK/'
+ok_path = '/root/OK/images/'
 real_path = '/root/Real/'
 dst = '/root/dataset/'
 
@@ -78,6 +78,6 @@ def move(path, dst, n_train, n_val='all'):
     
     
     
-move_OK(ok_path, dst, 3000, n_val=300)
+move_OK(ok_path, dst, 1800)
 move(real_path, dst, 200)
-move(syn_path, dst, 5000, n_val=200)
+move(syn_path, dst, 3500)
