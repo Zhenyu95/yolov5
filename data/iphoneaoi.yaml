@@ -5,5 +5,5 @@ val: images/test  # val images (relative to 'path')
 test: images/test # test images (optional)
 
 # Classes
-nc: 3  # number of classes
-names: ['Screw', 'rectangularShim', 'roundShim']  # class names
+nc: 1  # number of classes
+names: ['Screw']  # class names
