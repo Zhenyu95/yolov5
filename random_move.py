@@ -6,7 +6,7 @@ import pandas as pd
 
 random.seed(9)
 syn_path = '/root/Synthesized/'
-ok_path = '/root/OK/images/'
+ok_path = '/root/OK/'
 real_path = '/root/Real/'
 dst = '/root/dataset/'
 
