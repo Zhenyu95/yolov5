@@ -10,6 +10,7 @@ mv /OK.z01 /root/
 mv /OK.zip /root/
 mv /Real.zip /root/
 
+
 # unzip zip files
 cd /root
 zip -FF Synthesized.zip --out Synthesized_full.zip
@@ -31,12 +32,17 @@ rm -r /root/OK/FOV4/
 
 # move classes.txt to training labels path
 # rm /root/Synthesized/labels/classes.txt
-mv /root/Real/labels/classes.txt /root/dataset/labels/train/
+rm /root/Real/labels/classes.txt
 
 # move revised label to update Real labels
 mv /labels.zip /root/
 unzip labels.zip
 mv /root/labels/* /root/Real/labels/
+
+mv /FIT_Append.zip /root/
+unzip FIT_Append.zip
+mv /root/FIT_Append/images/* /root/Real/images/
+mv /root/FIT_Append/labels/* /root/Real/labels/
 
 # create dataset folders based on yolov5 structure requirement
 mkdir /root/dataset/
