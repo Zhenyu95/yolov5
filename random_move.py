@@ -78,6 +78,6 @@ def move(path, dst, n_train, n_val='all'):
     
     
     
-move_OK(ok_path, dst, 3500)
+move_OK(ok_path, dst, 1200)
 move(real_path, dst, 440)
-move(syn_path, dst, 8820, n_val=300)
+move(syn_path, dst, 4000)
