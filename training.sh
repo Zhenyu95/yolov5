@@ -1,8 +1,8 @@
 # move zip files to /root
-mv /Synthesized.z01 /root/
-mv /Synthesized.z02 /root/
-mv /Synthesized.z03 /root/
-mv /Synthesized.z04 /root/
+# mv /Synthesized.z01 /root/
+# mv /Synthesized.z02 /root/
+# mv /Synthesized.z03 /root/
+# mv /Synthesized.z04 /root/
 # mv /Synthesized.z05 /root/
 # mv /Synthesized.z06 /root/
 mv /Synthesized.zip /root/
@@ -13,9 +13,10 @@ mv /Real.zip /root/
 
 # unzip zip files
 cd /root
-zip -FF Synthesized.zip --out Synthesized_full.zip
+# zip -FF Synthesized.zip --out Synthesized_full.zip
 # zip -FF OK.zip --out OK_full.zip
-unzip Synthesized_full.zip
+# unzip Synthesized_full.zip
+unzip Synthesized.zip
 # unzip OK_full.zip
 unzip OK.zip
 unzip Real.zip
